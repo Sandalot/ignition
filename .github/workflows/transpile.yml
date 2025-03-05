@@ -1,0 +1,30 @@
+name: Transpiler
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: .
+
+jobs:
+  transpile:
+    name: transpile butane
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Butane
+        run: sudo apt install -y wget && wget https://github.com/coreos/butane/releases/latest/download/butane-x86_64-unknown-linux-gnu
+        
+      - name: Transpile
+      - run: for file in *.bu; do ./butane --strict "${file}" > "${file%.bu}".ign
+      
+      - name: Create release
+      - id: create_release
+      - uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            *.ign
