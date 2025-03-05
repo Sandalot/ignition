@@ -9,9 +9,7 @@ defaults:
 
 jobs:
   transpile:
-    name: transpile butane
     runs-on: ubuntu-24.04
-
     steps:
       - uses: actions/checkout@v4
       - name: Download Butane
