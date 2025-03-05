@@ -8,15 +8,18 @@ defaults:
     working-directory: .
 
 jobs:
-  transpile:
+  build:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      
       - name: Download Butane
-        run: sudo apt install -y wget && wget https://github.com/coreos/butane/releases/latest/download/butane-x86_64-unknown-linux-gnu
-        
+        run: |
+          wget https://github.com/coreos/butane/releases/latest/download/butane-x86_64-unknown-linux-gnu -O butane
+          chmod +x butane
+
       - name: Transpile
-      - run: for file in *.bu; do ./butane --strict "${file}" > "${file%.bu}".ign
+      - run: for file in *.bu; do ./butane --strict "{$file}" > "${file%.bu}".ign
       
       - name: Create release
         uses: softprops/action-gh-release@v2
