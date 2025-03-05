@@ -21,8 +21,8 @@ jobs:
       - run: for file in *.bu; do ./butane --strict "${file}" > "${file%.bu}".ign
       
       - name: Create release
-      - id: create_release
-      - uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2
+        id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
