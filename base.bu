@@ -9,3 +9,7 @@ passwd:
       groups:
         - wheel
         - docker
+systemd:
+  units:
+    - name: docker.service
+      mask: true
