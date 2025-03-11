@@ -13,3 +13,19 @@ systemd:
   units:
     - name: docker.service
       mask: true
+
+    - name: install-podman-compose.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Install Podman Compose via rpm-ostree
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/rpm-ostree install podman-compose
+        RemainAfterExit=true
+
+        [Install]
+        WantedBy=multi-user.target
