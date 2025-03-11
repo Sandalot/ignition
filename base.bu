@@ -21,10 +21,13 @@ systemd:
         Description=Install Podman Compose via rpm-ostree
         After=network-online.target
         Wants=network-online.target
+        # We run before `zincati.service` to avoid conflicting rpm-ostree transactions.
+        Before=zincati.service
+
 
         [Service]
         Type=oneshot
-        ExecStart=/usr/bin/rpm-ostree install podman-compose
+        ExecStart=/usr/bin/rpm-ostree install podman-compose --idempotent --allow-inactive -y
         RemainAfterExit=true
 
         [Install]
