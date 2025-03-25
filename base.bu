@@ -9,6 +9,16 @@ passwd:
       groups:
         - wheel
         - docker
+storage:
+  files:
+    - path: /etc/selinux/config 
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          # disabled selinux
+          SELINUX=disabled
+          SELINUXTYPE=targeted
 systemd:
   units:
     - name: docker.service
