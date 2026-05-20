@@ -1,5 +1,5 @@
 variant: fcos
-version: 1.1.0
+version: 1.6.0
 passwd:
   users:
     - name: core
@@ -8,37 +8,9 @@ passwd:
         - sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIPP7zqCol9EPZK9sdnRPEVBXJWXm+iocJC/iD9fD6nkAAAAABHNzaDo= backup
       groups:
         - wheel
-        - docker
-storage:
-  files:
-    - path: /etc/selinux/config 
-      mode: 0644
-      overwrite: true
-      contents:
-        inline: |
-          # disabled selinux
-          SELINUX=disabled
-          SELINUXTYPE=targeted
 systemd:
   units:
     - name: docker.service
       mask: true
-
-    - name: install-podman-compose.service
+    - name: podman.socket
       enabled: true
-      contents: |
-        [Unit]
-        Description=Install Podman Compose via rpm-ostree
-        After=network-online.target
-        Wants=network-online.target
-        # We run before `zincati.service` to avoid conflicting rpm-ostree transactions.
-        Before=zincati.service
-
-
-        [Service]
-        Type=oneshot
-        ExecStart=/usr/bin/rpm-ostree install podman-compose --idempotent --allow-inactive -y
-        RemainAfterExit=true
-
-        [Install]
-        WantedBy=multi-user.target
