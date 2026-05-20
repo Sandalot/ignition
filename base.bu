@@ -23,22 +23,3 @@ systemd:
   units:
     - name: docker.service
       mask: true
-
-    - name: install-podman-compose.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=Install Podman Compose via rpm-ostree
-        After=network-online.target
-        Wants=network-online.target
-        # We run before `zincati.service` to avoid conflicting rpm-ostree transactions.
-        Before=zincati.service
-
-
-        [Service]
-        Type=oneshot
-        ExecStart=/usr/bin/rpm-ostree install podman-compose --idempotent --allow-inactive -y
-        RemainAfterExit=true
-
-        [Install]
-        WantedBy=multi-user.target
