@@ -1,5 +1,10 @@
 variant: fcos
 version: 1.6.0
+
+config:
+  merge:
+    - source: https://github.com/Sandalot/ignition/releases/download/release/traefik.ign
+
 passwd:
   users:
     - name: core
@@ -8,6 +13,18 @@ passwd:
         - sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIPP7zqCol9EPZK9sdnRPEVBXJWXm+iocJC/iD9fD6nkAAAAABHNzaDo= backup
       groups:
         - wheel
+storage:
+  files:
+    - path: /var/lib/systemd/linger/core
+      mode: 0644
+  links:
+    - path: /var/home/core/.config/systemd/user/sockets.target.wants/podman.socket
+      target: /usr/lib/systemd/user/podman.socket
+      user:
+        name: core
+      group:
+        name: core
+
 systemd:
   units:
     - name: docker.service

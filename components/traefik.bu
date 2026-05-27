@@ -1,0 +1,171 @@
+variant: fcos
+version: 1.6.0
+
+storage:
+  directories:
+    - path: /var/home/core/.config/traefik/dynamic
+      mode: 0755
+      user:
+        name: core
+      group:
+        name: core
+
+  files:
+    - path: /var/home/core/.config/traefik/traefik.yml
+      mode: 0644
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        inline: |
+          entryPoints:
+            web:
+              address: ":8080"
+              http:
+                redirections:
+                  entryPoint:
+                    to: websecure
+                    scheme: https
+            websecure:
+              address: ":8443"
+          api:
+            dashboard: true
+          certificatesResolvers:
+            letsencrypt:
+              acme:
+                email: "${ACME_EMAIL}"
+                storage: /etc/traefik/acme/acme.json
+                dnsChallenge:
+                  provider: cloudflare
+                  resolvers:
+                    - "1.1.1.1:53"
+                    - "1.0.0.1:53"
+          providers:
+            docker:
+              endpoint: "unix:///var/run/docker.sock"
+              network: proxy
+              watch: true
+              exposedByDefault: false
+            file:
+              directory: /etc/traefik/dynamic
+              watch: true
+
+    - path: /var/home/core/.config/traefik/traefik.env
+      mode: 0600
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        inline: |
+          ROOT_DOMAIN=
+          ACME_EMAIL=
+
+    - path: /var/home/core/.config/traefik/dynamic/dashboard.yml.tmpl
+      mode: 0644
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        inline: |
+          http:
+            routers:
+              traefik-dashboard:
+                rule: 'Host(`traefik.{{ env "ROOT_DOMAIN" }}`)'
+                service: api@internal
+                entryPoints:
+                  - websecure
+                tls:
+                  certResolver: letsencrypt
+
+    - path: /var/home/core/.config/containers/systemd/traefik-acme.volume
+      mode: 0644
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        inline: |
+          [Volume]
+
+    - path: /var/home/core/.config/containers/systemd/proxy.network
+      mode: 0644
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        inline: |
+          [Network]
+
+    - path: /var/home/core/.config/containers/systemd/traefik.container
+      mode: 0644
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        inline: |
+          [Unit]
+          Description=Traefik edge proxy
+          After=network-online.target
+          Wants=network-online.target
+
+          [Container]
+          Image=docker.io/traefik:3
+          Network=proxy.network
+          EnvironmentFile=/var/home/core/.config/traefik/traefik.env
+          Secret=cf_token,type=env,target=CF_DNS_API_TOKEN
+          PublishPort=8080:8080
+          PublishPort=8443:8443
+          Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+          Volume=/var/home/core/.config/traefik:/etc/traefik:ro,Z
+          Volume=traefik-acme.volume:/etc/traefik/acme:Z
+
+          [Service]
+          Restart=always
+          RestartSec=5s
+
+          [Install]
+          WantedBy=default.target
+
+    - path: /etc/nftables.d/traefik.nft
+      mode: 0644
+      contents:
+        inline: |
+          table ip traefik_nat {
+            chain prerouting {
+              type nat hook prerouting priority dstnat; policy accept;
+              tcp dport 80 redirect to :8080
+              tcp dport 443 redirect to :8443
+            }
+          }
+
+          table ip traefik_filter {
+            chain input {
+              type filter hook input priority filter; policy accept;
+              tcp dport { 8080, 8443 } ct status dnat accept
+              tcp dport { 8080, 8443 } iif != "lo" drop
+            }
+          }
+
+systemd:
+  units:
+    - name: nftables-traefik.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=nftables port forwarding for Traefik
+        After=network.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/sbin/nft -f /etc/nftables.d/traefik.nft
+        ExecStop=/usr/sbin/nft delete table ip traefik_nat
+        ExecStop=/usr/sbin/nft delete table ip traefik_filter
+
+        [Install]
+        WantedBy=multi-user.target
