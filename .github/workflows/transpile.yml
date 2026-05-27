@@ -21,7 +21,7 @@ jobs:
           chmod +x butane
 
       - name: Transpile
-        run: for file in *.bu; do ./butane --strict "$file" > "${file%.bu}".ign; done
+        run: find . -name "*.bu" | while read -r file; do ./butane --strict "$file" > "$(basename "${file%.bu}").ign"; done
       
       - name: Create release
         uses: softprops/action-gh-release@v3

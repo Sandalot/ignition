@@ -1,9 +1,10 @@
 variant: fcos
 version: 1.6.0
 
-config:
-  merge:
-    - source: https://github.com/Sandalot/ignition/releases/download/release/traefik.ign
+ignition:
+  config:
+    merge:
+      - source: https://github.com/Sandalot/ignition/releases/download/release/traefik.ign
 
 passwd:
   users:
